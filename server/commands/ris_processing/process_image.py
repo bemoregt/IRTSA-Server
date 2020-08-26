@@ -34,35 +34,41 @@ def process_image(thermogram, method_select = 0, frames_to_process = -1, frame_s
     interest or we want to maximise contrast in an area. Also speed up processing.
     Returns an array of 2D phase maps in the format: [frame_index, row, column]
     """
-        
+    # 써모그램 디멘젼 추출    
     yLength = thermogram.shape[1]; # Note that y is before x; a carry over from 
     xLength = thermogram.shape[2]; #  Matlab...
     
     # Shrink the thermogram to the required size
     # The entire thermogram is passed even if only a section is to be analysed to
     #  ensure the stabilization has the maximum range to secure stability
+    # 모든 프레임에 대해 써모그램 ROI 줄이기 
     thermogram = thermogram[:, yStartSkip:yLength-yEndSkip, xStartSkip:xLength-xEndSkip]
-
+    # 프레임 수 추출
     total_frames = thermogram.shape[0]
         
     # If the number of analysis frames hasn't been specified, use the total number
     # The default sent by the app is -1, so if this is sent assume we want to max
     #  number of frames.
     # If the number of frames is longer than the total, reset to zero.
+    # 모든 프레임 다 사용.
     if (frame_start == -1) | (frame_start > total_frames):
         frame_start = 0
     
     # Also check the number of frames processed doesn't run longer than the file.
+    # 모든 프레임 다 사용
     if (frames_to_process == -1) | (frame_start + frames_to_process > total_frames):
         frames_to_process = total_frames - frame_start
     
+    # PPT 모드 선택하기 5가지 모드 ----------------------------
     # (Pseudo-)Static PPT
     if (method_select == 0):
-        thermogram = stabilise_image.stabilise_image(thermogram, frames_to_process = frames_to_process, start_frame = frame_start, global_motion = False)
+        thermogram = stabilise_image.stabilise_image(thermogram, 
+		frames_to_process = frames_to_process, start_frame = frame_start, global_motion = False)
         return pulse_phase_thermography(thermogram, frames_to_process = frames_to_process)
     # Dynamic PPT
     if (method_select == 1):
-        thermogram = stabilise_image.stabilise_image(thermogram, frames_to_process = frames_to_process, start_frame = frame_start, global_motion = True)
+        thermogram = stabilise_image.stabilise_image(thermogram, 
+		frames_to_process = frames_to_process, start_frame = frame_start, global_motion = True)
         return pulse_phase_thermography(thermogram, frames_to_process = frames_to_process)
     # (Pseudo-)Static Image Subtraction
     if (method_select == 2):
@@ -75,7 +81,8 @@ def process_image(thermogram, method_select = 0, frames_to_process = -1, frame_s
     # (Pseudo-)Static TSR
     #  Note that this TSR is very basic and unoptimised
     if (method_select == 4):
-        thermogram = stabilise_image.stabilise_image(thermogram, frames_to_process = frames_to_process, start_frame = frame_start, global_motion = False)
+        thermogram = stabilise_image.stabilise_image(thermogram, 
+		frames_to_process = frames_to_process, start_frame = frame_start, global_motion = False)
         return thermographic_signal_reconstruction(thermogram, frames_to_process = frames_to_process)
     # Dynamic TSR
     if (method_select == 5):
@@ -83,7 +90,7 @@ def process_image(thermogram, method_select = 0, frames_to_process = -1, frame_s
         return thermographic_signal_reconstruction(thermogram, frames_to_process = frames_to_process)
     return thermogram[frame_start:frames_to_process, :, :];
 
-
+# PPT 함수 ======================================
 def pulse_phase_thermography(thermogram, frames_to_process = -1, frame_start = 0, 
                              return_phase = 1):
     """ Expects a thermogram as a u_int16 3D numpy multdimensional array where
@@ -94,15 +101,18 @@ def pulse_phase_thermography(thermogram, frames_to_process = -1, frame_start = 0
     should almost always be 1.
     Returns an array of 2D phase maps in the format: [frame_index, row, column]
     """
-
+    # 크기 추출
     yLength = thermogram.shape[1]; #Note that y is before x; a carry over from 
     xLength = thermogram.shape[2]; # Matlab...
     #Preallocate phase maps
+    # 빈 페이즈맵 이미지 생성
     phasemap = numpy.zeros([1, yLength, xLength], dtype = numpy.complex64)
     
     # Perform FFT over the range specified
+    # 3차원 써모그램 데이타에 대해서 1차원 FFT 수행.
     fftmap = scipy.fft(thermogram[frame_start : frame_start + frames_to_process, :, :],
                                   axis = 0)
+    # 위상함수를 사용해 페이즈맵 이미지 생성
     phasemap[0, :, :] = scipy.angle(fftmap[return_phase, :, :])
         
     return phasemap
