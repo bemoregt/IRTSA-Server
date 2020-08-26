@@ -11,6 +11,13 @@ warnings.filterwarnings('ignore')
 from math import ceil
 from scipy.optimize import curve_fit
 
+# 써모그램 이미지 처리 함수
+# 써모그램: 3차원 이미지 시퀀스
+# 모드_셀렉트: 안정화 방식 선택, 0는 안하는거 같음,
+# 프레임즈 프로세스=-1, 모든 프레임.
+# 프레임_스타트=0
+# 리턴_페이즈=1, 불리언 
+# xtskip: ROI를 위한 스킵량들
 def process_image(thermogram, method_select = 0, frames_to_process = -1, frame_start = 0,
                   return_phase = 1, xStartSkip = 0, xEndSkip = 0, yStartSkip = 0, yEndSkip = 0):
     """ Expects a thermogram as a u_int16 3D numpy multdimensional array where
